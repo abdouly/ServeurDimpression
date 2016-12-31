@@ -36,7 +36,7 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante *impriman
 	imp.nom = nomImprimante;
 	imp.type = 0;
 	if(nbImprimantes != 0)
-	  imprimantes = (Imprimante *) realloc(imprimantes, sizeof(Imprimante)*nbImprimantes);
+	  imprimantes = (Imprimante *) realloc(imprimantes, sizeof(Imprimante)*(nbImprimantes+1));
 	imprimantes[nbImprimantes++] = imp;
 	break;
 	
@@ -45,7 +45,7 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante *impriman
 	imp.nom = nomImprimante;
 	imp.type = 1;
 	if(nbImprimantes != 0)
-	 imprimantes = (Imprimante *) realloc(imprimantes, sizeof(Imprimante)*nbImprimantes);
+	 imprimantes = (Imprimante *) realloc(imprimantes, sizeof(Imprimante)*(nbImprimantes+1));
 	imprimantes[nbImprimantes++] = imp;
 	break;
     }
