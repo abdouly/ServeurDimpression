@@ -8,10 +8,31 @@
 
 #include "communication/communication.h"
 
+#define TAILLE 10
+
 typedef struct imprimante{
   char *nom;
   int type;       //contient le type de l'imprimante. 0 : locale, 1 : distance
 }Imprimante;
+
+
+typedef struct job
+{
+	char * nom_imprimante;
+	char * nom_fichier;
+	int nb_copies;
+	int type_impression; // 0 pour recto et 1 pour recto verso
+}*Job;
+
+typedef struct impression
+{
+	char *nom;
+	char recto; //0 : recto , 1 : recto/verso
+	int nb_copies;
+}*Impression;
+
+Job job_files[TAILLE]; 
+int indice_depot = 0, indice_retrait = 0;
 
 //initialiser le serveur pour qu'il recoive les requetes
 int init_serveur(char *serveur){
@@ -43,10 +64,30 @@ void * cups_scheduler(void *args){
 //fonction d'un cups filter
 void * cups_filter(void *args){
    printf("Filter demarre\n");
+   Job job = job_files[indice_retrait];
+   indice_retrait = (indice_retrait +1)%TAILLE;
+
    for(;;){
 
    }
 }
+
+void envoyer_document(char *nom_fichier, char *nom_imprimante, int nb_copies, int type) {
+
+}
+
+void transformer_fichier_pdf() {
+
+}
+
+void transformer_fichier_texte() {
+
+}
+
+void transformer_fichier_image() {
+
+}
+
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
  	printf("Imprimante locale demarre\n");
@@ -118,6 +159,7 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante **imprima
       
       case 'l':
 	sscanf(&buffer[2],"%s",nomImprimante);
+
 	imp.nom = nomImprimante;
 	imp.type = 0;
 	if(nbImprimantes != 0)
@@ -127,6 +169,7 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante **imprima
 	
       case 'd':
 	sscanf(&buffer[2],"%s",nomImprimante);
+	
 	imp.nom = nomImprimante;
 	imp.type = 1;
 	if(nbImprimantes != 0)
