@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 typedef struct imprimante{
@@ -16,11 +17,12 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante *impriman
   Imprimante imp;
   imprimantes = (Imprimante *) malloc(sizeof(Imprimante));
   
-  file = open(fileName, "r");
+  file = fopen(fileName, "r");
   if(file == NULL) {
     fprintf(stderr,"File %s not found.\n",fileName);
     exit(-1);
   }
+  
   
   while (fgets(buffer, 512, file) != NULL){ 
     switch(buffer[0]) {
@@ -49,6 +51,5 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante *impriman
 	imprimantes[nbImprimantes++] = imp;
 	break;
     }
-  }
-  
+  } 
 }
