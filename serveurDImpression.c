@@ -9,11 +9,13 @@
 #include "communication/communication.h"
 
 #define TAILLE 10
+#define TAILLE_FILE_IMP 10
 
 typedef struct imprimante{
   char *nom;
   int type;       //contient le type de l'imprimante. 0 : locale, 1 : distance
 }Imprimante;
+
 
 
 typedef struct job
@@ -31,8 +33,37 @@ typedef struct impression
 	int nb_copies;
 }*Impression;
 
+typedef struct infos
+{
+	Impression file_imprimante[TAILLE_FILE_IMP];
+	int indice_depot;
+	int indice_retrait;
+	int nb_cases_remplies;
+	char *nom_imprimante;
+	pthread_cond_t place_disponible;
+	pthread_cond_t fichier_disponible;
+}*Infos;
+
 Job job_files[TAILLE]; 
+
+
 int indice_depot = 0, indice_retrait = 0;
+
+void envoyer_document(char * nom_imprimante) {
+
+}
+
+void transformer_fichier_pdf(char *nom_fichier) {
+
+}
+
+void transformer_fichier_text(char *nom_fichier) {
+
+}
+
+void transformer_fichier_image(char *nom_fichier) {
+
+}
 
 //initialiser le serveur pour qu'il recoive les requetes
 int init_serveur(char *serveur){
@@ -62,31 +93,30 @@ void * cups_scheduler(void *args){
 }
 
 //fonction d'un cups filter
-void * cups_filter(void *args){
+void * cups_filter(void){
    printf("Filter demarre\n");
-   Job job = job_files[indice_retrait];
-   indice_retrait = (indice_retrait +1)%TAILLE;
-
+   char extention[64];
+   char nom_fichier[256];
    for(;;){
+ 	  	Job job = job_files[indice_retrait];
+   		indice_retrait = (indice_retrait +1)%TAILLE;
+   		strcpy(nom_fichier,job->nom_fichier);
+   		strcpy(extention, strchr(nom_fichier, '.')+1); 
+   		
+   		if(strcmp(extention, "txt") == 0) {
+   			transformer_fichier_pdf(nom_fichier);
+   			envoyer_document(job->nom_imprimante);
+   		} else if(strcmp(extention, "pdf") == 0) {
+   			transformer_fichier_text(nom_fichier);
+   			envoyer_document(job->nom_imprimante);
+   		} else { //image JPEG
+   			transformer_fichier_image(nom_fichier);
+   			envoyer_document(job->nom_imprimante);
+   		}
 
    }
 }
 
-void envoyer_document(char *nom_fichier, char *nom_imprimante, int nb_copies, int type) {
-
-}
-
-void transformer_fichier_pdf() {
-
-}
-
-void transformer_fichier_texte() {
-
-}
-
-void transformer_fichier_image() {
-
-}
 
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
