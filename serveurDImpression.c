@@ -87,6 +87,7 @@ int init_serveur(char *serveur){
 void * cups_scheduler(void *args){
 	int numCommunication,numServeur;
 	char serveur[20];
+	Job demande;
 	Infos_serveur * infos = (Infos_serveur *) args;
 	numServeur = infos->numServeur;
 	strcpy(serveur,infos->nom);
@@ -96,6 +97,7 @@ void * cups_scheduler(void *args){
 		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",serveur, messageErreur(numCommunication));
 	 	 	exit(1);
 	   	}
+	   	recevoirOctets(numCommunication,&demande,sizeof(Job));
 	}
 }
 
@@ -131,10 +133,18 @@ void * cups_filter(void *args){
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
 	char fichier_imprimante[20];
-	char fichier;
+	char fichier[20];
+	char line[256];
+	int taille;
+	int inputFile,outputFile;
  	printf("[ Imprimante locale ] demarrage OK\n");
  	for(;;){
- 		
+ 		inputFile = open(fichier,O_RDONLY);
+ 		outputFile = open(fichier_imprimante,O_WRONLY|O_CREAT|O_APPEND,S_IRWXU);
+ 		while((taille = read(inputFile,line,256)) > 0)
+ 			write(outputFile,line,taille);
+ 		close(inputFile);
+ 		close(outputFile);
  	}
 }
 
