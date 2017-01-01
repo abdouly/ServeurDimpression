@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "../communication/communication.h"
+#include "communication/communication.h"
 
 typedef struct imprimante{
   char *nom;
@@ -24,7 +24,7 @@ int init_serveur(char *serveur){
   	return numServeur;
 }
 //fonction du scheduler
-void cups_scheduler(int numServeur){
+void * cups_scheduler(void *args){
 	int numCommunication;
 	for(;;){
 		if((numCommunication = accepterCommunication(numServeur)) < 0){
@@ -36,11 +36,13 @@ void cups_scheduler(int numServeur){
 	}
 }
 //fonction d'un cups filter
-void cups_filter(){
-   
+void * cups_filter(void *args){
+   for(;;){
+
+   }
 }
 //fonction d'un imprimante locale
-void imprimante_locale(){
+void * imprimante_locale(void *args){
  	for(;;){
  		
  	}
