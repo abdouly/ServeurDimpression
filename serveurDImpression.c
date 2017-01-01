@@ -1,8 +1,8 @@
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "communication/communication.h"
 
@@ -17,24 +17,25 @@ int init_serveur(char *serveur){
     unlink(serveur);
     if ((numServeur = initialiserServeur(serveur)) < 0)
   	{
-		fprintf(stderr, "Erreur initialiserServeur: %s: %s\n",
+	  fprintf(stderr, "Erreur initialiserServeur: %s: %s\n",
 			  serveur, messageErreur(numServeur));
 	  	exit(1);
   	}
   	return numServeur;
 }
+
 //fonction du scheduler
 void * cups_scheduler(void *args){
 	int numCommunication;
 	for(;;){
 		if((numCommunication = accepterCommunication(numServeur)) < 0){
-		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",
-				 serveur, messageErreur(numCommunication));
+		 	//fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",serveur, messageErreur(numCommunication));
 	 	 	exit(1);
 	   	}
         // lire le nom du fichier à transferer
 	}
 }
+
 //fonction d'un cups filter
 void * cups_filter(void *args){
    for(;;){
@@ -49,9 +50,8 @@ void * imprimante_locale(void *args){
 }
 
 //fonctions qui demarre les threads des imprimantes locales
-void demarrer_imprimantes_locales(tableau,int taille){
+void demarrer_imprimantes_locales(int *tableau,int taille){
 	int i;
-
 }
 //fonctions qui demarres les threads des cupsFilters
 void demarrer_filters(int nb){
@@ -71,11 +71,12 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante *impriman
   Imprimante imp;
   imprimantes = (Imprimante *) malloc(sizeof(Imprimante));
   
-  file = open(fileName, "r");
+  file = fopen(fileName, "r");
   if(file == NULL) {
     fprintf(stderr,"File %s not found.\n",fileName);
     exit(-1);
   }
+  
   
   while (fgets(buffer, 512, file) != NULL){ 
     switch(buffer[0]) {
@@ -104,7 +105,5 @@ void lectureConfiguration(char *fileName, char *serverName, Imprimante *impriman
 	imprimantes[nbImprimantes++] = imp;
 	break;
     }
-  }
-  
+  } 
 }
-
