@@ -29,7 +29,7 @@ void imprimante_distante(const char *imp_dist, char *nom_fichier)
       exit((2));
     }
   
-  for (;;)
+ for(;;)
 	 {
 	 // accepter une connection
 	 if ((numCommunication = accepterCommunication(numServeur)) < 0)
