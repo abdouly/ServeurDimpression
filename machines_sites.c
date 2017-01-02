@@ -42,6 +42,7 @@ int machine_site(Demande demande, char * nom_serveur)
 }
 
 void  demande_impression(char *nom_machine, char *nom_fichier, char *nom_imprimante, int identifiant ) {
+  int i;
   srand(time(NULL));
   Demande demande;
   Infos_demande infos_demande;
@@ -56,7 +57,8 @@ void  demande_impression(char *nom_machine, char *nom_fichier, char *nom_imprima
   demande.id_demande = identifiant;
   demande.type = IMPRESSION;
   demande.infos = infos_demande;
-  machine_site(demande, SERVEUR);
+  for(i=0; i< 10; i++)
+  	machine_site(demande, SERVEUR);
 }
 
 
@@ -72,7 +74,6 @@ void annuler_impression(char * nom_imprimante, int identifiant) {
 
 void etat_imprimante(char * nom_imprimante, int identifiant) {
   Demande demande; 
-  
   demande.id_demande = identifiant;
   strcpy(demande.nom_imprimante,nom_imprimante);
   demande.type = ETAT_IMPRIMANTE;

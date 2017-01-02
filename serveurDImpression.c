@@ -201,11 +201,12 @@ void traiter_job(Job *job,int numero_file){
 //fonction d'un cups filter
 void * cups_filter(void *args){
 	Job j;
-	int numero_file;
-   	printf("[ Filter ] demarrage OK\n");
+	int numero_file,num_filter;
+	num_filter = *(int *)args;
+   	printf("[ Filter %d ] demarrage OK\n",num_filter);
    	for(;;){
    		j = recuperer_job();
-   		printf("[ Filter ] traitement Job\n");
+   		printf("[ Filter %d ] traitement Job\n",num_filter);
    		numero_file = get_numero_imprimante(j.nom_imprimante);
    		if(numero_file != -1){
    			traiter_job(&j,numero_file);
@@ -224,11 +225,11 @@ void * imprimante_locale(void *args){
 	Job j;
 	numero_file = *(int *) args;
 	sprintf(fichier_imprimante,"file_locale_printer%d",numero_file);
- 	printf("[ Imprimante locale ] demarrage OK\n");
+ 	printf("[ Imprimante locale %s ] demarrage OK\n",imprimantes[numero_file].nom);
  	outputFile = open(fichier_imprimante,O_WRONLY|O_CREAT|O_APPEND,S_IRWXU);
  	for(;;){
  		j = recuperer_job_after_filter(numero_file);
- 		printf("[ Imprimante locale ] nouvelle impression\n");
+ 		printf("[ Imprimante locale %s ] nouvelle impression\n",imprimantes[numero_file].nom);
  		file_imprimantes[numero_file].encours=1;
  		file_imprimantes[numero_file].id_demande = j.id_demande;
  		inputFile = open(j.nom_fichier,O_RDONLY);
@@ -292,9 +293,12 @@ void demarrer_imprimantes(void){
 //fonctions qui demarres les threads des cupsFilters
 void demarrer_filters(void){
 	int i,etat;
+	int *tab;
 	printf("[ Main ] demarrage Filters\n");
+	tab = malloc(sizeof(int) * nbFilters);
 	for(i = 0; i < nbFilters; i++){
-		if((etat=pthread_create(&idThdFil[i], NULL, cups_filter,NULL)) != 0){
+		tab[i] = i;
+		if((etat=pthread_create(&idThdFil[i], NULL, cups_filter,&tab[i])) != 0){
 			fprintf(stderr, "[ Main ] Echec demarrage Filters\n");
 			exit(1);
 		}

@@ -12,7 +12,7 @@ void imprimante_distante(const char *imp_dist)
   	char nom_fichier[50];
   	int nbRecus;
   	int fd;
-  	printf("[ Imprimante distante ] demarrage \n");
+  	printf("[ Imprimante distante %s ] demarrage \n",imp_dist);
   	unlink(imp_dist);
   	sprintf(nom_fichier,"file_remote_printer_%s",imp_dist);
    	if ((numServeur = initialiserServeur(imp_dist)) < 0){
@@ -24,14 +24,14 @@ void imprimante_distante(const char *imp_dist)
     	fprintf(stderr, "Erreur ouverture du fichier %s\n", nom_fichier);
       	exit((2));
    	}
-   	printf("[ Imprimante distante ] demarrage OK \n");
+   	printf("[ Imprimante distante %s ] demarrage OK \n",imp_dist);
     for(;;){
 	 	if ((numCommunication = accepterCommunication(numServeur)) < 0){
 		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",
 				 imp_dist, messageErreur(numCommunication));
 	 	 	exit(1);
 	   	}
-	   	printf("[ Imprimante distante ] nouvelle impression\n");
+	   	printf("[ Imprimante distante %s ] nouvelle impression\n",imp_dist);
 	   	while ((nbRecus = recevoirOctets(numCommunication, tampon, BUFSIZ)) > 0)
 			write(fd, tampon, nbRecus);
 		cloreCommunication(numCommunication);
