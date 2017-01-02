@@ -55,7 +55,7 @@ typedef struct demande
 
 typedef struct infos
 {
-	Job file_imprimante[TAILLE_FILE_IMP];
+	Job file[TAILLE_FILE_IMP];
 	int indice_depot;
 	int indice_retrait;
 	int nb_cases_remplies;
