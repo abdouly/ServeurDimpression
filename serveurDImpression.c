@@ -113,13 +113,14 @@ void * imprimante_locale(void *args){
 	char fichier_imprimante[20];
 	char fichier[20];
 	char line[256];
-	int taille;
+	int taille,numero_file;
 	int inputFile,outputFile;
+	numero_file = *(int *) args;
  	printf("[ Imprimante locale ] demarrage OK\n");
  	for(;;){
  		inputFile = open(fichier,O_RDONLY);
  		outputFile = open(fichier_imprimante,O_WRONLY|O_CREAT|O_APPEND,S_IRWXU);
- 		while((taille = read(inputFile,line,256)) > 0)
+ 		while((taille = read(inputFile,line,256)) > 0 )
  			write(outputFile,line,taille);
  		close(inputFile);
  		close(outputFile);
