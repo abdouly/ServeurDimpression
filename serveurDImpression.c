@@ -7,68 +7,21 @@
 #include <pthread.h>
 
 #include "communication/communication.h"
+#include "impression.h"
 
-#define TAILLE 10
-#define TAILLE_FILE_IMP 10
+Job jobs[TAILLE_FILE_SCH];
+pthread_cond_t place_disponible;
+pthread_cond_t job_disponible;
+pthread_mutex_t mutex;
+Infos * file_imprimantes = NULL;//tableau des files d'attentes des imprimantes 
+Imprimante * imprimantes = NULL;//tableau des imprimantes
+char ** machines = NULL;//tableau des machines sites
+char nomServeur[30];//nom du serveur
+pthread_t idThdImp[NB_MAX_FILTER];
+pthread_t idThdFil[NB_MAX_PRINTERS];
 
-typedef struct imprimante{
-  char *nom;
-  int type;       //contient le type de l'imprimante. 0 : locale, 1 : distance
-}Imprimante;
-
-typedef struct infos_serveur
-{
-	char nom[20];
-	int numServeur;
-}Infos_serveur;
-
-
-typedef struct job
-{
-	char * nom_imprimante;
-	char * nom_fichier;
-	int nb_copies;
-	int type_impression; // 0 pour recto et 1 pour recto verso
-}*Job;
-
-typedef struct impression
-{
-	char *nom;
-	char recto; //0 : recto , 1 : recto/verso
-	int nb_copies;
-}*Impression;
-
-typedef struct infos
-{
-	Impression file_imprimante[TAILLE_FILE_IMP];
-	int indice_depot;
-	int indice_retrait;
-	int nb_cases_remplies;
-	char *nom_imprimante;
-	pthread_cond_t place_disponible;
-	pthread_cond_t fichier_disponible;
-}*Infos;
-
-Job job_files[TAILLE]; 
-
-
+int nbFilters,nbImprimantes,nbMachines;
 int indice_depot = 0, indice_retrait = 0;
-
-void envoyer_document(char * nom_imprimante) {
-
-}
-
-void transformer_fichier_pdf(char *nom_fichier) {
-
-}
-
-void transformer_fichier_text(char *nom_fichier) {
-
-}
-
-void transformer_fichier_image(char *nom_fichier) {
-
-}
 
 //initialiser le serveur pour qu'il recoive les requetes
 int init_serveur(char *serveur){
@@ -83,52 +36,77 @@ int init_serveur(char *serveur){
   	return numServeur;
 }
 
+//retourne 1 si machine authentifié 0 sinon
+int authentifier_machine(char *nomMachine){
+	int i;
+	for(i = 0; i < nbMachines; i++){
+		if(strcmp(machines[i],nomMachine) == 0)
+			break;
+	}
+	return i < nbMachines;
+}
+
+void traiter_impression(Demande requete,int numCommunication){
+
+}
+void etat_imprimante(void ){
+
+}
+void etat_impression(void){
+
+}
+void annuler_impression(void){
+
+}
+
+void traiter_requete(Demande requete,int numCommunication){
+	if(authentifier_machine(requete.machine) == 0)
+		return;
+	switch(requete.type){
+		case IMPRESSION:
+			traiter_impression(requete,numCommunication);
+			break;
+		case ETAT_IMPRIMANTE:
+			etat_imprimante();
+			break;
+		case ETAT_IMPRESSION:
+			etat_impression();
+			break;
+		case ANNULER:
+			annuler_impression();
+			break;
+	}
+}
 //fonction du scheduler
 void * cups_scheduler(void *args){
 	int numCommunication,numServeur;
-	char serveur[20];
-	Job demande;
+	Demande requete;
 	Infos_serveur * infos = (Infos_serveur *) args;
 	numServeur = infos->numServeur;
-	strcpy(serveur,infos->nom);
-	printf("[ Scheduler ] demarrage OK %d\n",numServeur);
+	printf("[ Scheduler ] demarrage OK \n");
 	for(;;){
 		if((numCommunication = accepterCommunication(numServeur)) < 0){
-		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",serveur, messageErreur(numCommunication));
+		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",infos->nom, messageErreur(numCommunication));
 	 	 	exit(1);
 	   	}
-	   	recevoirOctets(numCommunication,&demande,sizeof(Job));
+	   	recevoirOctets(numCommunication,&requete,sizeof(Demande));
+	   	traiter_requete(requete,numCommunication);
+	   	cloreCommunication(numCommunication);
 	}
 }
 
 //fonction d'un cups filter
-
-
-
 void * cups_filter(void *args){
    printf("[ Filter ] demarrage OK\n");
-   Job job = job_files[indice_retrait];
-   indice_retrait = (indice_retrait +1)%TAILLE;
+   //Job job = job_files[indice_retrait];
+   //indice_retrait = (indice_retrait +1)%TAILLE;
    for(;;){
- 	  	Job job = job_files[indice_retrait];
+ 	  	/*Job job = job_files[indice_retrait];
    		indice_retrait = (indice_retrait +1)%TAILLE;
    		strcpy(nom_fichier,job->nom_fichier);
-   		strcpy(extention, strchr(nom_fichier, '.')+1); 
-   		
-   		if(strcmp(extention, "txt") == 0) {
-   			transformer_fichier_pdf(nom_fichier);
-   			envoyer_document(job->nom_imprimante);
-   		} else if(strcmp(extention, "pdf") == 0) {
-   			transformer_fichier_text(nom_fichier);
-   			envoyer_document(job->nom_imprimante);
-   		} else { //image JPEG
-   			transformer_fichier_image(nom_fichier);
-   			envoyer_document(job->nom_imprimante);
-   		}
-
+   		strcpy(extention, strchr(nom_fichier, '.')+1); */
    }
 }
-
 
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
@@ -148,29 +126,39 @@ void * imprimante_locale(void *args){
  	}
 }
 
-//fonctions qui demarre les threads des imprimantes locales
-void demarrer_imprimantes_locales(Imprimante *imprimantes,int nb_imprimantes,pthread_t *idThdImp,int *nb_imprimantes_locale){
-	int i,etat,j;
-	j = 0;
+//fonction backend d'une imprimante distante
+void * backend(void *args){
+
+	printf("[ Backend ] demarrage OK\n");
+	for(;;);
+}
+
+//fonctions qui demarre les threads des imprimantes locales et les backends des distantes
+void demarrer_imprimantes(void){
+	int i,etat;
 	Imprimante p;
-	printf("[ Main ] demarrage Imprimantes locales\n");
-	for(i=0; i < nb_imprimantes; i++){
+	printf("[ Main ] demarrage Imprimantes locales et Backends\n");
+	for(i=0; i < nbImprimantes; i++){
 		p = imprimantes[i];
-		if(p.type == 0){
-			if((etat=pthread_create(&idThdImp[j++], NULL, imprimante_locale,NULL)) != 0){
+		if(p.type == IMPRIMANTE_LOCALE){
+			if((etat=pthread_create(&idThdImp[i], NULL, imprimante_locale,NULL)) != 0){
 				fprintf(stderr, "[ Main ] Echec demarrage Imprimante locale\n");
+				exit(1);
+			}
+		}else {
+			if((etat=pthread_create(&idThdImp[i], NULL, backend,NULL)) != 0){
+				fprintf(stderr, "[ Main ] Echec demarrage backend\n");
 				exit(1);
 			}
 		}
 	}
-	*nb_imprimantes_locale = j;
 	sleep(1);
 }
 //fonctions qui demarres les threads des cupsFilters
-void demarrer_filters(int nb_filters,pthread_t *idThdFil){
+void demarrer_filters(void){
 	int i,etat;
 	printf("[ Main ] demarrage Filters\n");
-	for(i = 0; i < nb_filters; i++){
+	for(i = 0; i < nbFilters; i++){
 		if((etat=pthread_create(&idThdFil[i], NULL, cups_filter,NULL)) != 0){
 			fprintf(stderr, "[ Main ] Echec demarrage Filters\n");
 			exit(1);
@@ -188,83 +176,105 @@ void demarrer_scheduler(pthread_t *idScheduler,Infos_serveur infos){
 	}
 	sleep(1);
 }
+//
+void init_file_attente(void){
+	int i;
+	printf("[ Main ] demarrage des verrous\n");
+	file_imprimantes = (Infos *) malloc(sizeof(Infos) * nbImprimantes);
+	for(i = 0; i < nbImprimantes; i++){
+		file_imprimantes[i].indice_depot = 0;
+		file_imprimantes[i].indice_retrait = 0;
+		file_imprimantes[i].nb_cases_remplies = 0;
+		pthread_cond_init(&file_imprimantes[i].place_disponible,NULL);
+		pthread_cond_init(&file_imprimantes[i].fichier_disponible,NULL);
+		pthread_mutex_init(&file_imprimantes[i].mutex,NULL);
+	}
+	pthread_cond_init(&place_disponible,NULL);
+	pthread_cond_init(&job_disponible,NULL);
+	pthread_mutex_init(&mutex,NULL);
+	printf("[ Main ] demarrage verrous OK\n");
+}
 
-void lectureConfiguration(char *fileName, char *serverName, Imprimante **imprimantes,int *nb_imprimantes) {
+void lectureConfiguration(char *fileName) {
   FILE *file;
   char buffer[512];
   char nomImprimante[256];
-  int nbImprimantes = 0;
+  char nomMachine[30];
   Imprimante imp;
-  *imprimantes = (Imprimante *) malloc(sizeof(Imprimante));
-  
+  nbImprimantes = 0;
+  nbMachines = 0;
+  printf("[ Main ] lecture du fichier de configuration\n");
+  machines = (char **) malloc(sizeof(char *));
+  imprimantes = (Imprimante *) malloc(sizeof(Imprimante));
   file = fopen(fileName, "r");
   if(file == NULL) {
-    fprintf(stderr,"File %s not found.\n",fileName);
+    fprintf(stderr,"[ Main ] impossible d'ouvrir le fichier de configuration %s \n",fileName);
     exit(-1);
   }
-  
-  
   while (fgets(buffer, 512, file) != NULL){ 
-    switch(buffer[0]) {
+  	switch(buffer[0]) {
       case '#': //commentaire
-	break;
-      
-      case 's':
-	sscanf(&buffer[2],"%s",serverName);
-	break;
-      
-      case 'l':
-	sscanf(&buffer[2],"%s",nomImprimante);
-
-	imp.nom = nomImprimante;
-	imp.type = 0;
-	if(nbImprimantes != 0)
-	  *imprimantes = (Imprimante *) realloc(*imprimantes, sizeof(Imprimante)*(nbImprimantes+1));
-	(*imprimantes)[nbImprimantes++] = imp;
-	break;
-	
-      case 'd':
-	sscanf(&buffer[2],"%s",nomImprimante);
-	
-	imp.nom = nomImprimante;
-	imp.type = 1;
-	if(nbImprimantes != 0)
-	 *imprimantes = (Imprimante *) realloc(*imprimantes, sizeof(Imprimante)*(nbImprimantes+1));
-	(*imprimantes)[nbImprimantes++] = imp;
-	break;
+		break;  
+    case 's':
+		sscanf(&buffer[2],"%s",nomServeur);
+		break;
+    case 'l':
+		sscanf(&buffer[2],"%s",nomImprimante);
+		imp.nom = (char *) malloc(sizeof(char)*(strlen(nomImprimante)+1));
+		strcpy(imp.nom,nomImprimante);
+		imp.type = IMPRIMANTE_LOCALE;
+		if(nbImprimantes != 0)
+	  		imprimantes = (Imprimante *) realloc(imprimantes, sizeof(Imprimante)*(nbImprimantes+1));
+		imprimantes[nbImprimantes++] = imp;
+		break;
+    case 'd':
+		sscanf(&buffer[2],"%s",nomImprimante);
+		imp.nom = (char *) malloc(sizeof(char)*(strlen(nomImprimante)+1));
+		strcpy(imp.nom,nomImprimante);
+		imp.type = IMPRIMANTE_DISTANTE;
+		if(nbImprimantes != 0)
+	 		imprimantes = (Imprimante *) realloc(imprimantes, sizeof(Imprimante)*(nbImprimantes+1));
+		imprimantes[nbImprimantes++] = imp;
+		break;
+	case 'f':
+		sscanf(&buffer[2],"%d",&nbFilters);
+		break;
+	case 'm':
+		sscanf(&buffer[2],"%s",nomMachine);
+		if(nbMachines != 0)
+			machines = (char **) realloc(machines,sizeof(char *)*(nbMachines+1));
+		machines[nbMachines] = (char *) malloc(sizeof(char)*(strlen(nomMachine)+1));
+		strcpy(machines[nbMachines++],nomMachine);
+		break;
     }
-  }
-  *nb_imprimantes = nbImprimantes; 
+  } 
+  printf("[ Main ] lecture du fichier de configuration OK\n");
 }
 
 int main(int argc,char *argv[]){
 	pthread_t idScheduler;
-	pthread_t idThdImp[10];
-	pthread_t idThdFil[10];
 	int numServeur,etat;
 	Infos_serveur infos;
-	Imprimante * imprimantes = NULL;
-	int nb_imprimantes,nbFilters,i,nb_imprimantes_locale;
-	nbFilters = 4;
-	char serveur[20];
+	int i;
 	printf("[ Main ] Initialisation du serveur d'impression\n");
-	lectureConfiguration(argv[1],serveur,&imprimantes,&nb_imprimantes);
-	numServeur = init_serveur(serveur);
+	lectureConfiguration(argv[1]);
+	numServeur = init_serveur(nomServeur);
 	infos.numServeur = numServeur;
-	strcpy(infos.nom,serveur);
+	strcpy(infos.nom,nomServeur);
+	init_file_attente();
 	demarrer_scheduler(&idScheduler,infos);
-	demarrer_filters(nbFilters,idThdFil);
-	demarrer_imprimantes_locales(imprimantes,nb_imprimantes,idThdImp,&nb_imprimantes_locale);
+	demarrer_filters();
+	demarrer_imprimantes();
 	printf("[ Main ] Initialisation serveur OK\n");
 	if((etat = pthread_join(idScheduler,NULL)) != 0)
 		fprintf(stderr, "[ Main ] Erreur fermeture Scheduler\n");
 	for(i = 0; i < nbFilters; i++){
 		if ((etat = pthread_join(idThdFil[i], NULL)) != 0)
-			fprintf(stderr, "[ Main ] Erreur fermeture Filter\n");
+			fprintf(stderr, "[ Main ] Erreur fermeture Filters\n");
 	}
-	for(i = 0; i < nb_imprimantes_locale; i++){
+	for(i = 0; i < nbImprimantes; i++){
 		if ((etat = pthread_join(idThdImp[i], NULL)) != 0)
-			fprintf(stderr, "[ Main ] Erreur fermeture Imprimante locale\n");
+			fprintf(stderr, "[ Main ] Erreur fermeture Imprimantes\n");
 	}
 	exit(0);
 }
