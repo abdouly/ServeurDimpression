@@ -1,10 +1,13 @@
 #nom du serveur
-serveur server
+s server
 #imprimantes locales
-locale imp1
-locale imp2
-locale imp3
+l imp1
+l imp2
+l imp3
 #imprimantes distantes
-distante imp4
-distante imp5
-distante imp6
+d imp4
+d imp5
+d imp6
+f 4
+m ma1
+m ma2
