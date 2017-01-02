@@ -9,10 +9,7 @@
 int machine_site(Demande demande, char * nom_serveur) 
 {
 	int numCommunication;
-	char tampon[BUFSIZ];
 	int lgChemin;
-	int nbEnvoyes;
-
 	// se connecter au serveur
 	if ((numCommunication = demanderCommunication(nom_serveur)) < 0)
 		{
@@ -40,19 +37,19 @@ int main(int argc, char *argv[])
   Infos_demande infos_demande;
   
   infos_demande.nb_copies = 1;
-  infos_demande.nom_fichier = "file.txt";
-  infos_demande.type_impression = 0;
-    
-  strcpy(demande.machine,"imp1");
+  strcpy(infos_demande.nom_fichier,"file.txt");
+  infos_demande.type_impression = RECTO;
+  strcpy(demande.machine,"ma1");
+  strcpy(demande.nom_imprimante,"imp1");
   demande.id_demande = 1;
   demande.type = IMPRESSION;
   demande.infos = infos_demande;
-  
-  if (argc != 3)
+
+  /*if (argc != 3)
   	  {
 	  fprintf(stderr, "usage: %s nom_serveur chemin_fichier", argv[0]);
 	  exit(2);
-  	  }
+  	  }*/
   ret = machine_site(demande, "server");
   exit(ret);
 }

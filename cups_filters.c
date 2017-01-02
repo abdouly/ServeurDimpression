@@ -15,7 +15,7 @@ char *convertir_manj_min(char *ch) {
 }
 
 char *extension(char *nom_fichier) {
-  char ext[32];
+  char *ext = malloc(sizeof(char)*5);
   strcpy(ext, strchr(nom_fichier,'.')+1);
   return ext;
 }
@@ -94,14 +94,5 @@ void transformer_fichier_image(char *file_in, char *file_out) {
   
   close(fd_entree);
   close(fd_sortie);
-}
-
-
-int main() {
- transformer_fichier_text("file.txt","sortie");
- transformer_fichier_pdf("tp.pdf", "sortie.pdf");
- transformer_fichier_image("linux.png","img.png");
- transformer_fichier_image("capitole.jpg", "cap.jpg");
- return 0;
 }
 

@@ -1,11 +1,13 @@
 CFLAGS=-Wall -g
-WORK= serv
+WORK= serveur client
 .PHONY: all clean
 
 all: $(WORK)
 
-serv: serveurDImpression.o communication/communication.o cups_filters.o
+serveur: serveurDImpression.o communication/communication.o cups_filters.o
 	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g -lpthread 
+client: machines_sites.o communication/communication.o
+	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g 
 
 clean:
-	rm -f $(WORK) serv *.o communication/*.o
+	rm -f $(WORK) serveur client *.o communication/*.o

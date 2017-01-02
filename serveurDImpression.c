@@ -39,8 +39,9 @@ int init_serveur(char *serveur){
 }
 
 //retourne 1 si machine authentifié 0 sinon
-int authentifier_machine(char *nomMachine){
+int authentifier_machine(char nomMachine[]){
 	int i;
+	printf("%d %s\n", nbMachines,nomMachine);
 	for(i = 0; i < nbMachines; i++){
 		if(strcmp(machines[i],nomMachine) == 0)
 			break;
@@ -50,7 +51,7 @@ int authentifier_machine(char *nomMachine){
 int get_numero_imprimante(char * nom){
 	int i;
 	for(i = 0; i < nbImprimantes; i++){
-		if(strcpy(imprimantes[i].nom,nom) == 0)
+		if(strcmp(imprimantes[i].nom,nom) == 0)
 			break;
 	}
 	if(i < nbImprimantes)
@@ -124,11 +125,9 @@ void traiter_impression(Demande requete,int numCommunication){
 	job.nb_copies = infos.nb_copies;
 	job.type_impression = infos.type_impression;
 	job.id_demande = requete.id_demande;
-	job.nom_imprimante = malloc(sizeof(char)*(strlen(requete.nom_imprimante)+1));
 	strcpy(job.nom_imprimante,requete.nom_imprimante);
-	job.nom_fichier = malloc(sizeof(char)*(strlen(infos.nom_fichier)+1));
 	strcpy(job.nom_fichier,infos.nom_fichier);
-
+	placer_job(job);
 }
 void etat_imprimante(void ){
 
@@ -171,7 +170,7 @@ void * cups_scheduler(void *args){
 	 	 	exit(1);
 	   	}
 	   	recevoirOctets(numCommunication,&requete,sizeof(Demande));
-	   	printf("[ Scheduler ] nouvelle demande\n");
+	   	printf("[ Scheduler ] nouvelle demande \n");
 	   	traiter_requete(requete,numCommunication);
 	   	cloreCommunication(numCommunication);
 	}
@@ -180,13 +179,12 @@ void * cups_scheduler(void *args){
 void traiter_job(Job *job){
 	char ext[5];
 	char nom_sortie[] ="file_inter";
-    ext = extension(job->nom_fichier);
+    strcpy(ext,extension(job->nom_fichier));
 	if(strcmp(ext,"pdf") == 0)
 		transformer_fichier_pdf(job->nom_fichier,nom_sortie);
 	else if(strcmp(ext,"txt") == 0)
 		transformer_fichier_text(job->nom_fichier,nom_sortie);
 	else transformer_fichier_image(job->nom_fichier,nom_sortie);
-	job->nom_fichier = malloc(sizeof(char)*(strlen(nom_sortie)+1));
 	strcpy(job->nom_fichier,nom_sortie);
 }
 

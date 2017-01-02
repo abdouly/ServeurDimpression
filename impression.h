@@ -31,25 +31,25 @@ typedef struct infos_serveur
 typedef struct job
 {	
 	int id_demande;
-	char * nom_imprimante;
-	char * nom_fichier;
+	char nom_imprimante[30];
+	char  nom_fichier[50];
 	int nb_copies;
 	int type_impression;
 }Job;
 
 typedef struct infos_demande
 {
-	char * nom_fichier;
+	char nom_fichier[50];
 	int nb_copies;
 	int type_impression;
 }Infos_demande;
 
 typedef struct demande
 {
-	char * machine;
+	char machine[20];
 	int id_demande;
 	int type;
-	char * nom_imprimante;
+	char nom_imprimante[20];
 	Infos_demande infos;
 }Demande;
 
