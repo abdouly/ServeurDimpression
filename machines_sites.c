@@ -16,6 +16,8 @@
 #define TYPE 1
 #define NOM_FICHIER "file.txt"
 
+char *imprimantes_dispo[] = {"imp1", "imp2", "imp3", "imp5", "imp6"};
+int nb_imprimante = 6;
 
 int machine_site(Demande demande, char * nom_serveur) 
 {
@@ -91,7 +93,14 @@ void etat_impression( char * nom_imprimante, int identifiant) {
 
 
 void * envoyer_demande(void *args) {
-  switch(TYPE) {
+  srand(time(NULL));
+  int i;
+  for(i = 0; i< 20; i++ ) {
+    int numero_imp = rand() % 6;
+    demande_impression(imprimantes_dispo[numero_imp], NOM_FICHIER, NOM_IMP, ID);
+  }
+  
+ /* switch(TYPE) {
     case IMPRESSION:
       demande_impression(NOM_MACHINE, NOM_FICHIER, NOM_IMP, ID);
       break;
@@ -107,7 +116,7 @@ void * envoyer_demande(void *args) {
     case ETAT_IMPRESSION:
       etat_impression(NOM_IMP, ID);
       break;
-  }
+  }*/
   pthread_exit(NULL);
 }
  
