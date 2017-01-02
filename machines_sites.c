@@ -91,7 +91,6 @@ void etat_impression( char * nom_imprimante, int identifiant) {
 
 
 void * envoyer_demande(void *args) {
-  printf(" ***************** \n");
   switch(TYPE) {
     case IMPRESSION:
       demande_impression(NOM_MACHINE, NOM_FICHIER, NOM_IMP, ID);
@@ -111,12 +110,6 @@ void * envoyer_demande(void *args) {
   }
   pthread_exit(NULL);
 }
-
-void* test(void *args) {
-  printf(" **************************** ok\n");
-   pthread_exit(NULL);
-}
-
  
 int main(int argc, char *argv[])
 {
