@@ -51,11 +51,12 @@ typedef struct demande
 	int type;
 	char * nom_imprimante;
 	Infos_demande inf_demande;
+	Infos_demande infos;
 }Demande;
 
 typedef struct infos
 {
-	Job file_imprimante[TAILLE_FILE_IMP];
+	Job file[TAILLE_FILE_IMP];
 	int indice_depot;
 	int indice_retrait;
 	int nb_cases_remplies;
