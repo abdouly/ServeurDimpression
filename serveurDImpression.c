@@ -79,6 +79,8 @@ Job recuperer_job(){
 	j = jobs[indice_retrait];
 	indice_retrait = (indice_retrait+1)%TAILLE_FILE_SCH;
 	nb_jobs_disponibles--;
+	if(nb_jobs_disponibles > 0)
+		pthread_cond_signal(&job_disponible);
 	if(nb_jobs_disponibles == TAILLE_FILE_SCH-1)
 		pthread_cond_signal(&place_disponible);
 	pthread_mutex_unlock(&mutex);

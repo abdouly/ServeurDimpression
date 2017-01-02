@@ -16,7 +16,7 @@
 #define TYPE 1
 #define NOM_FICHIER "file.txt"
 
-char *imprimantes_dispo[] = {"imp1", "imp2", "imp3", "imp5", "imp6"};
+char *imprimantes_dispo[] = {"imp1", "imp2", "imp3","imp4", "imp5", "imp6"};
 int nb_imprimante = 6;
 
 int machine_site(Demande demande, char * nom_serveur) 
@@ -44,8 +44,7 @@ int machine_site(Demande demande, char * nom_serveur)
 }
 
 void  demande_impression(char *nom_machine, char *nom_fichier, char *nom_imprimante, int identifiant ) {
-  int i;
-  srand(time(NULL));
+  srand(getpid());
   Demande demande;
   Infos_demande infos_demande;
   
@@ -59,8 +58,7 @@ void  demande_impression(char *nom_machine, char *nom_fichier, char *nom_imprima
   demande.id_demande = identifiant;
   demande.type = IMPRESSION;
   demande.infos = infos_demande;
-  for(i=0; i< 10; i++)
-  	machine_site(demande, SERVEUR);
+  machine_site(demande, SERVEUR);
 }
 
 
@@ -94,11 +92,12 @@ void etat_impression( char * nom_imprimante, int identifiant) {
 
 
 void * envoyer_demande(void *args) {
-  srand(time(NULL));
   int i;
-  for(i = 0; i< 20; i++ ) {
+  srand(time(NULL));
+  for(i = 0; i < 20; i++ ) {
     int numero_imp = rand() % 6;
-    demande_impression(imprimantes_dispo[numero_imp], NOM_FICHIER, NOM_IMP, ID);
+    printf("%d\n",numero_imp);
+    demande_impression(NOM_MACHINE,NOM_FICHIER,imprimantes_dispo[5], ID);
   }
   
  /* switch(TYPE) {
