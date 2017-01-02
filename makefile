@@ -7,7 +7,7 @@ all: $(WORK)
 serveur: serveurDImpression.o communication/communication.o cups_filters.o
 	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g -lpthread 
 client: machines_sites.o communication/communication.o
-	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g 
+	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g -lpthread
 imprimante: imprimante_distante.o communication/communication.o
 	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g
 clean:
