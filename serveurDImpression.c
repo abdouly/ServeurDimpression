@@ -129,6 +129,7 @@ void traiter_impression(Demande requete,int numCommunication){
 	strcpy(job.nom_fichier,infos.nom_fichier);
 	placer_job(job);
 }
+
 void etat_imprimante(void ){
 
 }
