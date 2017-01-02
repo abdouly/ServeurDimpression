@@ -47,56 +47,6 @@ int authentifier_machine(char *nomMachine){
 	}
 	return i < nbMachines;
 }
-
-void traiter_impression(Demande requete,int numCommunication){
-
-}
-void etat_imprimante(void ){
-
-}
-void etat_impression(void){
-
-}
-void annuler_impression(void){
-
-}
-
-void traiter_requete(Demande requete,int numCommunication){
-	if(authentifier_machine(requete.machine) == 0)
-		return;
-	switch(requete.type){
-		case IMPRESSION:
-			traiter_impression(requete,numCommunication);
-			break;
-		case ETAT_IMPRIMANTE:
-			etat_imprimante();
-			break;
-		case ETAT_IMPRESSION:
-			etat_impression();
-			break;
-		case ANNULER:
-			annuler_impression();
-			break;
-	}
-}
-//fonction du scheduler
-void * cups_scheduler(void *args){
-	int numCommunication,numServeur;
-	Demande requete;
-	Infos_serveur * infos = (Infos_serveur *) args;
-	numServeur = infos->numServeur;
-	printf("[ Scheduler ] demarrage OK \n");
-	for(;;){
-		if((numCommunication = accepterCommunication(numServeur)) < 0){
-		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",infos->nom, messageErreur(numCommunication));
-	 	 	exit(1);
-	   	}
-	   	recevoirOctets(numCommunication,&requete,sizeof(Demande));
-	   	traiter_requete(requete,numCommunication);
-	   	cloreCommunication(numCommunication);
-	}
-}
-
 int get_numero_imprimante(char * nom){
 	int i;
 	for(i = 0; i < nbImprimantes; i++){
@@ -149,34 +99,6 @@ void placer_job_after_filter(Job j,int numero_file){
     pthread_mutex_unlock(&file_imprimantes[numero_file].mutex);
 }
 
-void traiter_job(Job *job){
-	char extension[5];
-	char nom_sortie[30];
-
-	if(strcmp(extension,"pdf") == 0)
-		transformer_fichier_pdf(job->nom_fichier,nom_sortie);
-	else if(strcmp(extension,"txt") == 0)
-		transformer_fichier_text(job->nom_fichier,nom_sortie);
-	else transformer_fichier_image(job->nom_fichier,nom_sortie);
-	job->nom_fichier = malloc(sizeof(char)*(strlen(nom_sortie)+1));
-	strcpy(job->nom_fichier,nom_sortie);
-}
-
-//fonction d'un cups filter
-void * cups_filter(void *args){
-	Job j;
-	int numero_file;
-   	printf("[ Filter ] demarrage OK\n");
-   	for(;;){
-   		j = recuperer_job();
-   		numero_file = get_numero_imprimante(j.nom_imprimante);
-   		if(numero_file != -1){
-   			traiter_job(&j);
-   			placer_job_after_filter(j,numero_file);
-   		}
-   	}
-}
-
 Job recuperer_job_after_filter(int numero_file){
 	Job j;
 	int i;
@@ -195,9 +117,98 @@ Job recuperer_job_after_filter(int numero_file){
     return j;
 }
 
+void traiter_impression(Demande requete,int numCommunication){
+	Infos_demande infos;
+	Job job;
+	infos = requete.infos;
+	job.nb_copies = infos.nb_copies;
+	job.type_impression = infos.type_impression;
+	job.id_demande = requete.id_demande;
+	job.nom_imprimante = malloc(sizeof(char)*(strlen(requete.nom_imprimante)+1));
+	strcpy(job.nom_imprimante,requete.nom_imprimante);
+	job.nom_fichier = malloc(sizeof(char)*(strlen(infos.nom_fichier)+1));
+	strcpy(job.nom_fichier,infos.nom_fichier);
+
+}
+void etat_imprimante(void ){
+
+}
+void etat_impression(void){
+
+}
+void annuler_impression(void){
+
+}
+
+void traiter_requete(Demande requete,int numCommunication){
+	if(authentifier_machine(requete.machine) == 0)
+		return;
+	switch(requete.type){
+		case IMPRESSION:
+			traiter_impression(requete,numCommunication);
+			break;
+		case ETAT_IMPRIMANTE:
+			etat_imprimante();
+			break;
+		case ETAT_IMPRESSION:
+			etat_impression();
+			break;
+		case ANNULER:
+			annuler_impression();
+			break;
+	}
+}
+//fonction du scheduler
+void * cups_scheduler(void *args){
+	int numCommunication,numServeur;
+	Demande requete;
+	Infos_serveur * infos = (Infos_serveur *) args;
+	numServeur = infos->numServeur;
+	printf("[ Scheduler ] demarrage OK \n");
+	for(;;){
+		if((numCommunication = accepterCommunication(numServeur)) < 0){
+		 	fprintf(stderr, "Erreur accepterCommunication: %s: %s\n",infos->nom, messageErreur(numCommunication));
+	 	 	exit(1);
+	   	}
+	   	recevoirOctets(numCommunication,&requete,sizeof(Demande));
+	   	printf("[ Scheduler ] nouvelle demande\n");
+	   	traiter_requete(requete,numCommunication);
+	   	cloreCommunication(numCommunication);
+	}
+}
+
+void traiter_job(Job *job){
+	char ext[5];
+	char nom_sortie[] ="file_inter";
+    ext = extension(job->nom_fichier);
+	if(strcmp(ext,"pdf") == 0)
+		transformer_fichier_pdf(job->nom_fichier,nom_sortie);
+	else if(strcmp(ext,"txt") == 0)
+		transformer_fichier_text(job->nom_fichier,nom_sortie);
+	else transformer_fichier_image(job->nom_fichier,nom_sortie);
+	job->nom_fichier = malloc(sizeof(char)*(strlen(nom_sortie)+1));
+	strcpy(job->nom_fichier,nom_sortie);
+}
+
+//fonction d'un cups filter
+void * cups_filter(void *args){
+	Job j;
+	int numero_file;
+   	printf("[ Filter ] demarrage OK\n");
+   	for(;;){
+   		j = recuperer_job();
+   		printf("[ Filter ] traitement Job\n");
+   		numero_file = get_numero_imprimante(j.nom_imprimante);
+   		if(numero_file != -1){
+   			traiter_job(&j);
+   			placer_job_after_filter(j,numero_file);
+   		}
+   	}
+}
+
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
-	char fichier_imprimante[20];
+	char fichier_imprimante[] ="file_printer"; //a changer
 	char buffer[256];
 	int taille,numero_file;
 	int inputFile,outputFile;
@@ -206,6 +217,7 @@ void * imprimante_locale(void *args){
  	printf("[ Imprimante locale ] demarrage OK\n");
  	for(;;){
  		j = recuperer_job_after_filter(numero_file);
+ 		printf("[ Imprimante locale ] nouvelle impression\n");
  		file_imprimantes[numero_file].encours=1;
  		file_imprimantes[numero_file].id_demande = j.id_demande;
  		inputFile = open(j.nom_fichier,O_RDONLY);

@@ -50,7 +50,6 @@ typedef struct demande
 	int id_demande;
 	int type;
 	char * nom_imprimante;
-	Infos_demande inf_demande;
 	Infos_demande infos;
 }Demande;
 
