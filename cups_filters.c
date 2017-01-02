@@ -41,6 +41,7 @@ void transformer_fichier_text(char *file_in, char *file_out) {
 
 void transformer_fichier_pdf(char *file_in, char *file_out) {
   int fd_entree, fd_sortie;
+  
   char *buffer = (char *) malloc(sizeof(char)*256);  
   char *tmp = (char *) malloc(sizeof(char)*256);  
   fd_entree = open(file_in, O_RDONLY);
