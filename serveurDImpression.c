@@ -110,8 +110,8 @@ void * cups_filter(void *args){
 
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
+	int numero_file = *(int *) args;
 	char fichier_imprimante[20];
-	char fichier[20];
 	char line[256];
 	int taille;
 	int inputFile,outputFile;

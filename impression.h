@@ -61,4 +61,6 @@ typedef struct infos
 	pthread_cond_t place_disponible;
 	pthread_cond_t fichier_disponible;
 	pthread_mutex_t mutex;
+	int encours;
+	int id_demande;
 }Infos;
