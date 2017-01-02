@@ -38,24 +38,35 @@ typedef struct impression
 	int nb_copies;
 }*Impression;
 
-typedef struct infos
+typedef struct caracteristiques
 {
 	Impression file_imprimante[TAILLE_FILE_IMP];
 	int indice_depot;
 	int indice_retrait;
 	int nb_cases_remplies;
-	char *nom_imprimante;
+	Imprimante imprimante;
 	pthread_cond_t place_disponible;
 	pthread_cond_t fichier_disponible;
-}*Infos;
+}*Caracteristiques;
 
 Job job_files[TAILLE]; 
-
+Caracteristiques *caracteristique;
+int nombre_imprimantes = 0;
 
 int indice_depot = 0, indice_retrait = 0;
 
 void envoyer_document(char * nom_imprimante) {
 
+}
+
+void envoyer_document_local(char *nom_fichier) {
+	Caracteristiques caract;
+	for(int i = 0; i < nombre_imprimantes; i++) {
+		caract = caracteristique[i];
+		if(strcmp(caract->imprimante.nom, nom_fichier) == 0 && caract->imprimante.type == 0){
+		  
+		}
+	}
 }
 
 void transformer_fichier_pdf(char *nom_fichier) {
