@@ -90,3 +90,13 @@ void transformer_fichier_image(char *file_in, char *file_out) {
   close(fd_entree);
   close(fd_sortie);
 }
+
+
+int main() {
+ transformer_fichier_text("file.txt","sortie");
+ transformer_fichier_pdf("tp.pdf", "sortie.pdf");
+ transformer_fichier_image("linux.png","img.png");
+ transformer_fichier_image("capitole.jpg", "cap.jpg");
+ return 0;
+}
+
