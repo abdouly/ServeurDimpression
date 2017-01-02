@@ -97,6 +97,7 @@ int main() {
  transformer_fichier_pdf("tp.pdf", "sortie.pdf");
  transformer_fichier_image("linux.png","img.png");
  transformer_fichier_image("capitole.jpg", "cap.jpg");
+ return 0;
 }
 
 
