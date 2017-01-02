@@ -41,13 +41,13 @@ int init_serveur(char *serveur){
 //retourne 1 si machine authentifié 0 sinon
 int authentifier_machine(char nomMachine[]){
 	int i;
-	printf("%d %s\n", nbMachines,nomMachine);
 	for(i = 0; i < nbMachines; i++){
 		if(strcmp(machines[i],nomMachine) == 0)
 			break;
 	}
 	return i < nbMachines;
 }
+//retourne le numero de la file d'attente de l'imprimante dont le nom est en parametre
 int get_numero_imprimante(char * nom){
 	int i;
 	for(i = 0; i < nbImprimantes; i++){
@@ -58,6 +58,7 @@ int get_numero_imprimante(char * nom){
 		return i;
 	return -1;
 }
+//place le job j dans la file d'attente des jobs, pour etre traite par un filter
 void placer_job(Job j){
 	pthread_mutex_lock(&mutex);
 	while(nb_jobs_disponibles == TAILLE_FILE_SCH)
@@ -69,7 +70,7 @@ void placer_job(Job j){
 		pthread_cond_signal(&job_disponible);
 	pthread_mutex_unlock(&mutex);
 }
-
+//fonction qui permet a un filter de recuperer un job dans la file d'attente
 Job recuperer_job(){
 	Job j;
 	pthread_mutex_lock(&mutex);
@@ -83,7 +84,7 @@ Job recuperer_job(){
 	pthread_mutex_unlock(&mutex);
 	return j;
 }
-
+//fonction qui permet a un filter de deposer un job filtre sur la file d'attente d'une imprimante
 void placer_job_after_filter(Job j,int numero_file){
 	int i;
 	pthread_mutex_lock(&file_imprimantes[numero_file].mutex);
@@ -99,7 +100,7 @@ void placer_job_after_filter(Job j,int numero_file){
     	pthread_cond_signal(&file_imprimantes[numero_file].fichier_disponible);
     pthread_mutex_unlock(&file_imprimantes[numero_file].mutex);
 }
-
+//fonction qui permet a une imprimante de recuperer un travail d'impression sur sa file d'attente
 Job recuperer_job_after_filter(int numero_file){
 	Job j;
 	int i;
@@ -117,7 +118,7 @@ Job recuperer_job_after_filter(int numero_file){
     pthread_mutex_unlock(&file_imprimantes[numero_file].mutex);
     return j;
 }
-
+//fonction qu'utilise le scheduler apres reception d'une demande d'impression
 void traiter_impression(Demande requete,int numCommunication){
 	Infos_demande infos;
 	Job job;
@@ -129,16 +130,23 @@ void traiter_impression(Demande requete,int numCommunication){
 	strcpy(job.nom_fichier,infos.nom_fichier);
 	placer_job(job);
 }
-void etat_imprimante(void ){
-
+//fonction qu'utilise le scheduler apres reception d'une requete sur l'etat d'une imprimante
+void etat_imprimante(Demande requete,int numCommunication){
+	int numero,nb_elements;
+	numero = get_numero_imprimante(requete.nom_imprimante);
+	nb_elements = file_imprimantes[numero].nb_cases_remplies;
+	//ecriture de la reponse
 }
+
+//fonction qu'utilise le scheduler apres reception d'une requete sur l'etat d'une impression
 void etat_impression(void){
 
 }
+//fonction qu'utilise le scheduler apres reception d'une demande d'annulation d'une impression
 void annuler_impression(void){
 
 }
-
+//fonction de traitement des requetes d'un client
 void traiter_requete(Demande requete,int numCommunication){
 	if(authentifier_machine(requete.machine) == 0)
 		return;
@@ -147,7 +155,7 @@ void traiter_requete(Demande requete,int numCommunication){
 			traiter_impression(requete,numCommunication);
 			break;
 		case ETAT_IMPRIMANTE:
-			etat_imprimante();
+			etat_imprimante(requete,numCommunication);
 			break;
 		case ETAT_IMPRESSION:
 			etat_impression();
@@ -174,11 +182,13 @@ void * cups_scheduler(void *args){
 	   	traiter_requete(requete,numCommunication);
 	   	cloreCommunication(numCommunication);
 	}
+	pthread_exit(NULL);
 }
-
-void traiter_job(Job *job){
+//fonction qu'utilise un filter pour convertir un fichier 
+void traiter_job(Job *job,int numero_file){
 	char ext[5];
-	char nom_sortie[] ="file_inter";
+	char nom_sortie[50];
+	sprintf(nom_sortie,"%d%s%d",job->id_demande,job->nom_fichier,numero_file);
     strcpy(ext,extension(job->nom_fichier));
 	if(strcmp(ext,"pdf") == 0)
 		transformer_fichier_pdf(job->nom_fichier,nom_sortie);
@@ -198,52 +208,61 @@ void * cups_filter(void *args){
    		printf("[ Filter ] traitement Job\n");
    		numero_file = get_numero_imprimante(j.nom_imprimante);
    		if(numero_file != -1){
-   			traiter_job(&j);
+   			traiter_job(&j,numero_file);
    			placer_job_after_filter(j,numero_file);
    		}
    	}
+   	pthread_exit(NULL);
 }
 
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
-	char fichier_imprimante[] ="file_printer"; //a changer
+	char fichier_imprimante[50];
 	char buffer[256];
 	int taille,numero_file;
 	int inputFile,outputFile;
 	Job j;
 	numero_file = *(int *) args;
+	sprintf(fichier_imprimante,"file_locale_printer%d",numero_file);
  	printf("[ Imprimante locale ] demarrage OK\n");
+ 	outputFile = open(fichier_imprimante,O_WRONLY|O_CREAT|O_APPEND,S_IRWXU);
  	for(;;){
  		j = recuperer_job_after_filter(numero_file);
  		printf("[ Imprimante locale ] nouvelle impression\n");
  		file_imprimantes[numero_file].encours=1;
  		file_imprimantes[numero_file].id_demande = j.id_demande;
  		inputFile = open(j.nom_fichier,O_RDONLY);
- 		outputFile = open(fichier_imprimante,O_WRONLY|O_CREAT|O_APPEND,S_IRWXU);
  		while((taille = read(inputFile,buffer,256)) > 0 && file_imprimantes[numero_file].encours==1)
  			write(outputFile,buffer,taille);
  		close(inputFile);
- 		close(outputFile);
+ 		//suppression du fichier intermediaire
+ 		unlink(j.nom_fichier);
  	}
+ 	close(outputFile);
+ 	pthread_exit(NULL);
 }
 
 //fonction backend d'une imprimante distante
 void * backend(void *args){
 	char buffer[256];
 	int taille,numero_file;
-	int inputFile;
+	int inputFile,numCommunication;
 	Job j;
 	numero_file = *(int *) args;
 	printf("[ Backend ] demarrage OK\n");
 	for(;;){
 		j = recuperer_job_after_filter(numero_file);
+		printf("[ Backend ] nouvelle impression\n");
  		file_imprimantes[numero_file].encours=1;
  		file_imprimantes[numero_file].id_demande = j.id_demande;
  		inputFile = open(j.nom_fichier,O_RDONLY);
+ 		numCommunication = demanderCommunication(j.nom_imprimante);
  		while((taille = read(inputFile,buffer,256)) > 0 && file_imprimantes[numero_file].encours==1)
- 			//write(outputFile,buffer,taille);
+ 			envoyerOctets(numCommunication,buffer, taille);
  		close(inputFile);
+ 		cloreCommunication(numCommunication);
 	}
+	pthread_exit(NULL);
 }
 
 //fonctions qui demarre les threads des imprimantes locales et les backends des distantes
@@ -367,11 +386,16 @@ void lectureConfiguration(char *fileName) {
   printf("[ Main ] lecture du fichier de configuration OK\n");
 }
 
+
 int main(int argc,char *argv[]){
 	pthread_t idScheduler;
 	int numServeur,etat;
 	Infos_serveur infos;
 	int i;
+	if(argc != 2){
+		fprintf(stderr, "Usage %s fichier_configuration\n",argv[0]);
+		exit(1);
+	}
 	printf("[ Main ] Initialisation du serveur d'impression\n");
 	lectureConfiguration(argv[1]);
 	numServeur = init_serveur(nomServeur);
@@ -392,5 +416,6 @@ int main(int argc,char *argv[]){
 		if ((etat = pthread_join(idThdImp[i], NULL)) != 0)
 			fprintf(stderr, "[ Main ] Erreur fermeture Imprimantes\n");
 	}
+	arreterServeur(numServeur);
 	exit(0);
 }

@@ -40,16 +40,10 @@ int main(int argc, char *argv[])
   strcpy(infos_demande.nom_fichier,"file.txt");
   infos_demande.type_impression = RECTO;
   strcpy(demande.machine,"ma1");
-  strcpy(demande.nom_imprimante,"imp1");
+  strcpy(demande.nom_imprimante,"imp5");
   demande.id_demande = 1;
   demande.type = IMPRESSION;
   demande.infos = infos_demande;
-
-  /*if (argc != 3)
-  	  {
-	  fprintf(stderr, "usage: %s nom_serveur chemin_fichier", argv[0]);
-	  exit(2);
-  	  }*/
   ret = machine_site(demande, "server");
   exit(ret);
 }
