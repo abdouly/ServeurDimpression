@@ -14,6 +14,11 @@ char *convertir_manj_min(char *ch) {
   return chaine;
 }
 
+char *extension(char *nom_fichier) {
+  char ext[32];
+  strcpy(ext, strchr(nom_fichier,'.')+1);
+  return ext;
+}
 
 void transformer_fichier_text(char *file_in, char *file_out) {
   int fd_entree, fd_sortie;

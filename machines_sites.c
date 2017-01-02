@@ -6,7 +6,7 @@
 #include "communication/communication.h"
 #include "impression.h"
 
-int machine_site(Demande demande, Infos_serveur infos_serveur) 
+int machine_site(Demande demande, char * nom_serveur) 
 {
 	int numCommunication;
 	char tampon[BUFSIZ];
@@ -14,17 +14,17 @@ int machine_site(Demande demande, Infos_serveur infos_serveur)
 	int nbEnvoyes;
 
 	// se connecter au serveur
-	if ((numCommunication = demanderCommunication(infos_serveur.nom)) < 0)
+	if ((numCommunication = demanderCommunication(nom_serveur)) < 0)
 		{
 		fprintf(stderr, "Machine site : erreur %s\n", messageErreur((RetourCommunication)numCommunication));
 		return 1;
 		}
 
 	// envoyer le path du fichier demandé
-	lgChemin = strlen(demande.inf_demande.nom_fichier)+1;
-    if (envoyerOctets(numCommunication, demande.inf_demande.nom_fichier, lgChemin) != lgChemin)
+	lgChemin = sizeof(demande);
+    if (envoyerOctets(numCommunication, &demande, lgChemin) != lgChemin)
 	{
-		fprintf(stderr, "Machine site: erreur envoi path %s\n", demande.inf_demande.nom_fichier);
+		fprintf(stderr, "Machine site: erreur envoi path %s\n", nom_serveur);
 		return 2;
 	}
     // clore la communication
@@ -37,12 +37,22 @@ int main(int argc, char *argv[])
 {
   int ret;
   Demande demande;
-  Infos_serveur infos_serveur;
+  Infos_demande infos_demande;
+  
+  infos_demande.nb_copies = 1;
+  infos_demande.nom_fichier = "file.txt";
+  infos_demande.type_impression = 0;
+    
+  strcpy(demande.machine,"imp1");
+  demande.id_demande = 1;
+  demande.type = IMPRESSION;
+  demande.infos = infos_demande;
+  
   if (argc != 3)
   	  {
 	  fprintf(stderr, "usage: %s nom_serveur chemin_fichier", argv[0]);
 	  exit(2);
   	  }
- // ret = machine_site(demande, infos_serveur);
+  ret = machine_site(demande, "server");
   exit(ret);
 }

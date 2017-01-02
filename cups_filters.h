@@ -17,4 +17,6 @@ void transformer_fichier_pdf(char *file_in, char *file_out);
  * qui sera reconnu par l'imprimante
  */
 void transformer_fichier_image(char *file_in, char *file_out);
+
+char *extension(char *nom_fichier);
 #endif

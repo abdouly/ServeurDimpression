@@ -56,7 +56,6 @@ void imprimante_distante(const char *imp_dist, char *nom_fichier)
 		 	close(inputFile);
 			}
 		 }
-
 	 // clore la communication
 	 cloreCommunication(numCommunication);
 	 }
