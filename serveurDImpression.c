@@ -61,24 +61,16 @@ void envoyer_document(char * nom_imprimante) {
 
 void envoyer_document_local(char *nom_fichier) {
 	Caracteristiques caract;
+	Impression imp;
 	for(int i = 0; i < nombre_imprimantes; i++) {
 		caract = caracteristique[i];
 		if(strcmp(caract->imprimante.nom, nom_fichier) == 0 && caract->imprimante.type == 0){
-		  
+		  imp->nom = nom_fichier;
+		  imp->recto = 0;
+		  caract->file_imprimante[caract->indice_depot] = imp;
+		  caract->indice_depot = (caract->indice_depot +1) % TAILLE_FILE_IMP;
 		}
 	}
-}
-
-void transformer_fichier_pdf(char *nom_fichier) {
-
-}
-
-void transformer_fichier_text(char *nom_fichier) {
-
-}
-
-void transformer_fichier_image(char *nom_fichier) {
-
 }
 
 //initialiser le serveur pour qu'il recoive les requetes
