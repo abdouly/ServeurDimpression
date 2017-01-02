@@ -7,7 +7,8 @@
 
 char *convertir_manj_min(char *ch) {
   char * chaine = (char *) malloc(sizeof(char)*strlen(ch));
-  for(int i = 0; i < strlen(ch); i++) {
+  int i;
+  for(i = 0; i < strlen(ch); i++) {
     chaine[i] = tolower(ch[i]);
   }
   return chaine;
@@ -42,8 +43,7 @@ void transformer_fichier_text(char *file_in, char *file_out) {
 void transformer_fichier_pdf(char *file_in, char *file_out) {
   int fd_entree, fd_sortie;
   
-  char *buffer = (char *) malloc(sizeof(char)*256);  
-  char *tmp = (char *) malloc(sizeof(char)*256);  
+  char *buffer = (char *) malloc(sizeof(char)*256);    
   fd_entree = open(file_in, O_RDONLY);
     int t;
   if(fd_entree == -1) {
@@ -90,21 +90,3 @@ void transformer_fichier_image(char *file_in, char *file_out) {
   close(fd_entree);
   close(fd_sortie);
 }
-
-
-int main() {
- transformer_fichier_text("file.txt","sortie");
- transformer_fichier_pdf("tp.pdf", "sortie.pdf");
- transformer_fichier_image("linux.png","img.png");
- transformer_fichier_image("capitole.jpg", "cap.jpg");
-}
-
-
-
-
-
-
-
-
-
-

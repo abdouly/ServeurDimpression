@@ -8,6 +8,7 @@
 
 #include "communication/communication.h"
 #include "impression.h"
+#include "cups_filters.h"
 
 Job jobs[TAILLE_FILE_SCH];
 pthread_cond_t place_disponible;
@@ -21,6 +22,7 @@ pthread_t idThdImp[NB_MAX_FILTER];
 pthread_t idThdFil[NB_MAX_PRINTERS];
 
 int nbFilters,nbImprimantes,nbMachines;
+int nb_jobs_disponibles;
 int indice_depot = 0, indice_retrait = 0;
 
 //initialiser le serveur pour qu'il recoive les requetes
@@ -95,33 +97,121 @@ void * cups_scheduler(void *args){
 	}
 }
 
+int get_numero_imprimante(char * nom){
+	int i;
+	for(i = 0; i < nbImprimantes; i++){
+		if(strcpy(imprimantes[i].nom,nom) == 0)
+			break;
+	}
+	if(i < nbImprimantes)
+		return i;
+	return -1;
+}
+void placer_job(Job j){
+	pthread_mutex_lock(&mutex);
+	while(nb_jobs_disponibles == TAILLE_FILE_SCH)
+		pthread_cond_wait(&place_disponible,&mutex);
+	jobs[indice_depot] = j;
+	indice_depot = (indice_depot+1)%TAILLE_FILE_SCH;
+	nb_jobs_disponibles++;
+	if(nb_jobs_disponibles == 1)
+		pthread_cond_signal(&job_disponible);
+	pthread_mutex_unlock(&mutex);
+}
+
+Job recuperer_job(){
+	Job j;
+	pthread_mutex_lock(&mutex);
+	while(nb_jobs_disponibles == 0)
+		pthread_cond_wait(&job_disponible,&mutex);
+	j = jobs[indice_retrait];
+	indice_retrait = (indice_retrait+1)%TAILLE_FILE_SCH;
+	nb_jobs_disponibles--;
+	if(nb_jobs_disponibles == TAILLE_FILE_SCH-1)
+		pthread_cond_signal(&place_disponible);
+	pthread_mutex_unlock(&mutex);
+	return j;
+}
+
+void placer_job_after_filter(Job j,int numero_file){
+	int i;
+	pthread_mutex_lock(&file_imprimantes[numero_file].mutex);
+	while(file_imprimantes[numero_file].nb_cases_remplies == TAILLE_FILE_IMP)
+    	pthread_cond_wait(&file_imprimantes[numero_file].place_disponible,
+      					&file_imprimantes[numero_file].mutex);
+    i = file_imprimantes[numero_file].indice_depot;
+    file_imprimantes[numero_file].file[i] = j;
+    i = (i+1)%TAILLE_FILE_IMP;
+    file_imprimantes[numero_file].indice_depot = i;
+    file_imprimantes[numero_file].nb_cases_remplies++;
+    if(file_imprimantes[numero_file].nb_cases_remplies == 1)
+    	pthread_cond_signal(&file_imprimantes[numero_file].fichier_disponible);
+    pthread_mutex_unlock(&file_imprimantes[numero_file].mutex);
+}
+
+void traiter_job(Job *job){
+	char extension[5];
+	char nom_sortie[30];
+
+	if(strcmp(extension,"pdf") == 0)
+		transformer_fichier_pdf(job->nom_fichier,nom_sortie);
+	else if(strcmp(extension,"txt") == 0)
+		transformer_fichier_text(job->nom_fichier,nom_sortie);
+	else transformer_fichier_image(job->nom_fichier,nom_sortie);
+	job->nom_fichier = malloc(sizeof(char)*(strlen(nom_sortie)+1));
+	strcpy(job->nom_fichier,nom_sortie);
+}
+
 //fonction d'un cups filter
 void * cups_filter(void *args){
-   printf("[ Filter ] demarrage OK\n");
-   //Job job = job_files[indice_retrait];
-   //indice_retrait = (indice_retrait +1)%TAILLE;
-   for(;;){
- 	  	/*Job job = job_files[indice_retrait];
-   		indice_retrait = (indice_retrait +1)%TAILLE;
-   		strcpy(nom_fichier,job->nom_fichier);
-   		strcpy(extention, strchr(nom_fichier, '.')+1); */
-   }
+	Job j;
+	int numero_file;
+   	printf("[ Filter ] demarrage OK\n");
+   	for(;;){
+   		j = recuperer_job();
+   		numero_file = get_numero_imprimante(j.nom_imprimante);
+   		if(numero_file != -1){
+   			traiter_job(&j);
+   			placer_job_after_filter(j,numero_file);
+   		}
+   	}
+}
+
+Job recuperer_job_after_filter(int numero_file){
+	Job j;
+	int i;
+	pthread_mutex_lock(&file_imprimantes[numero_file].mutex);
+	while(file_imprimantes[numero_file].nb_cases_remplies == 0)
+    	pthread_cond_wait(&file_imprimantes[numero_file].fichier_disponible,
+      					&file_imprimantes[numero_file].mutex);
+    i = file_imprimantes[numero_file].indice_retrait;
+    j = file_imprimantes[numero_file].file[i];
+    i = (i+1)%TAILLE_FILE_IMP;
+    file_imprimantes[numero_file].indice_retrait = i;
+    file_imprimantes[numero_file].nb_cases_remplies--;
+    if(file_imprimantes[numero_file].nb_cases_remplies == TAILLE_FILE_IMP-1)
+    	pthread_cond_signal(&file_imprimantes[numero_file].place_disponible);
+    pthread_mutex_unlock(&file_imprimantes[numero_file].mutex);
+    return j;
 }
 
 //fonction d'un imprimante locale
 void * imprimante_locale(void *args){
-	int numero_file = *(int *) args;
 	char fichier_imprimante[20];
-	char line[256];
+	char buffer[256];
 	int taille,numero_file;
 	int inputFile,outputFile;
+	Job j;
 	numero_file = *(int *) args;
  	printf("[ Imprimante locale ] demarrage OK\n");
  	for(;;){
- 		inputFile = open(fichier,O_RDONLY);
+ 		j = recuperer_job_after_filter(numero_file);
+ 		file_imprimantes[numero_file].encours=1;
+ 		file_imprimantes[numero_file].id_demande = j.id_demande;
+ 		inputFile = open(j.nom_fichier,O_RDONLY);
  		outputFile = open(fichier_imprimante,O_WRONLY|O_CREAT|O_APPEND,S_IRWXU);
- 		while((taille = read(inputFile,line,256)) > 0 )
- 			write(outputFile,line,taille);
+ 		while((taille = read(inputFile,buffer,256)) > 0 && file_imprimantes[numero_file].encours==1)
+ 			write(outputFile,buffer,taille);
  		close(inputFile);
  		close(outputFile);
  	}
@@ -129,25 +219,40 @@ void * imprimante_locale(void *args){
 
 //fonction backend d'une imprimante distante
 void * backend(void *args){
-
+	char buffer[256];
+	int taille,numero_file;
+	int inputFile;
+	Job j;
+	numero_file = *(int *) args;
 	printf("[ Backend ] demarrage OK\n");
-	for(;;);
+	for(;;){
+		j = recuperer_job_after_filter(numero_file);
+ 		file_imprimantes[numero_file].encours=1;
+ 		file_imprimantes[numero_file].id_demande = j.id_demande;
+ 		inputFile = open(j.nom_fichier,O_RDONLY);
+ 		while((taille = read(inputFile,buffer,256)) > 0 && file_imprimantes[numero_file].encours==1)
+ 			//write(outputFile,buffer,taille);
+ 		close(inputFile);
+	}
 }
 
 //fonctions qui demarre les threads des imprimantes locales et les backends des distantes
 void demarrer_imprimantes(void){
 	int i,etat;
+	int * tab;
 	Imprimante p;
 	printf("[ Main ] demarrage Imprimantes locales et Backends\n");
+	tab = malloc(sizeof(int) * nbImprimantes);
 	for(i=0; i < nbImprimantes; i++){
 		p = imprimantes[i];
+		tab[i] = i;
 		if(p.type == IMPRIMANTE_LOCALE){
-			if((etat=pthread_create(&idThdImp[i], NULL, imprimante_locale,NULL)) != 0){
+			if((etat=pthread_create(&idThdImp[i], NULL, imprimante_locale,&tab[i])) != 0){
 				fprintf(stderr, "[ Main ] Echec demarrage Imprimante locale\n");
 				exit(1);
 			}
 		}else {
-			if((etat=pthread_create(&idThdImp[i], NULL, backend,NULL)) != 0){
+			if((etat=pthread_create(&idThdImp[i], NULL, backend,&tab[i])) != 0){
 				fprintf(stderr, "[ Main ] Echec demarrage backend\n");
 				exit(1);
 			}

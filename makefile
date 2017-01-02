@@ -4,7 +4,7 @@ WORK= serv
 
 all: $(WORK)
 
-serv: serveurDImpression.o communication/communication.o
+serv: serveurDImpression.o communication/communication.o cups_filters.o
 	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^ -g -lpthread 
 
 clean:
