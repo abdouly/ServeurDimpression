@@ -49,13 +49,13 @@ void  demande_impression(char *nom_machine, char *nom_fichier, char *nom_imprima
   infos_demande.nb_copies = rand() %4 +1;
   strcpy(infos_demande.nom_fichier, nom_fichier);
   infos_demande.type_impression = RECTO;
-  
+  demande.type = IMPRESSION;
+  demande.infos = infos_demande;
   strcpy(demande.machine, nom_machine);
   strcpy(demande.nom_imprimante, nom_imprimante);
   demande.id_demande = identifiant;
   demande.type = IMPRESSION;
   demande.infos = infos_demande;
-  
   machine_site(demande, SERVEUR);
 }
 
